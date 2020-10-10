@@ -10,6 +10,9 @@ An attempt to evolve a regex that matches everything in one list while matching 
 list. Changing to possessive quantifiers avoided catastrophic backtracking and allows this to evolve
 for more complex lists and multiple generations.
 
+This is a bit different to normal regex golf since I want it to fully match (all characters) of the
+items in the match list while matching zero characters in the avoid list.
+
 ```
 python regex_solver.py 10000 10 --match arthur marthur --avoid jimmy billy
 Running with population N=10000 and generations G=10
