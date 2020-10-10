@@ -7,11 +7,8 @@ set composed of the lowercase ASCII characters.
 
 ## regex_solver
 An attempt to evolve a regex that matches everything in one list while matching nothing in a second
-list. This attempt works for small, simple lists. But if the lists get even slightly more 
-complicated, then the GP evolves regexes with catastrophic backtracking and this stalls the 
-evolution.
-
-Need to find a way to kill and penalise long-running GP functions.
+list. Changing to possessive quantifiers avoided catastrophic backtracking and allows this to evolve
+for more complex lists and multiple generations.
 
 ```
 python regex_solver.py 10000 10 --match arthur marthur --avoid jimmy billy

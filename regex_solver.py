@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 
 import argparse
-import random
 import operator
-import re
+import random
 import string
-import timeout_decorator
+import re
 
 import editdistance
 import numpy
+import regex
 from deap import algorithms, base, creator, gp, tools
 
+
+# Handle command line arguments
 parser = argparse.ArgumentParser(
     description="Evolve a genetic program to match and avoid the given inputs.")
 parser.add_argument('N', type=int, nargs="?", default=10000,
@@ -25,7 +27,7 @@ parser.add_argument('--avoid', type=str, nargs="*", default="terrible",
 args = parser.parse_args()
 
 
-def char_join(left, right):
+def join(left, right):
     return left + right
 
 
@@ -34,23 +36,29 @@ def regex_or(left, right):
 
 
 def regex_plus(unary):
-    return f"({unary})+"
+    return f"({unary})++"  # possessive to avoid catastrophic backtracking
 
 
 def regex_star(unary):
-    return f"({unary})*"
+    return f"({unary})*+"  # possessive to avoid catastrophic backtracking
+
+
+def regex_optional(unary):
+    return f"({unary})?+"  # possessive to avoid catastrophic backtracking
 
 
 pset = gp.PrimitiveSet("MAIN", 0)
-pset.addPrimitive(char_join, 2)
+pset.addPrimitive(join, 2)
 pset.addPrimitive(regex_or, 2)
 pset.addPrimitive(regex_plus, 1)
 pset.addPrimitive(regex_star, 1)
+pset.addPrimitive(regex_optional, 1)
 for i in string.ascii_lowercase:
     pset.addTerminal(i)
 
 pset.addTerminal(r"\w")
 pset.addTerminal(r"\s")
+pset.addTerminal(".")  # regex dot
 
 creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
 creator.create("Individual", gp.PrimitiveTree, fitness=creator.FitnessMin)
@@ -62,30 +70,22 @@ toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 toolbox.register("compile", gp.compile, pset=pset)
 
 
-# @timeout_decorator.timeout(1, use_signals=False)  # doesn't work
-def get_match(regex, input_str):
-    result = re.match(regex, input_str)
+def get_match(candidate_regex, input_str):
+    result = regex.match(candidate_regex, input_str)
     return result[0] if result else ""
 
 
 def evalSymbReg(individual):
     # Transform the tree expression in a callable function
     func = toolbox.compile(expr=individual)
-    # Evaluate the mean squared error between the expression
-    # and the real function
+    # Evaluate the mean squared error between the expression and the real function
     sqerrors = 0
     for goal in args.match:
-        try:
-            result = get_match(func, goal)
-            sqerrors += editdistance.eval(goal, result)**2
-        except KeyboardInterrupt:
-            sqerrors += editdistance.eval(goal, "")**2
+        result = get_match(func, goal)
+        sqerrors += editdistance.eval(goal, result)**2
     for avoid in args.avoid:
-        try:
-            result = get_match(func, avoid)
-            sqerrors += editdistance.eval("", result)**2
-        except KeyboardInterrupt:
-            sqerrors += editdistance.eval(goal, "")**2
+        result = get_match(func, avoid)
+        sqerrors += editdistance.eval("", result)**2
     return sqerrors,
 
 
