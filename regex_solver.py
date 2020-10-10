@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 
 import argparse
+import multiprocessing
 import operator
 import random
 import string
-import re
 
 import editdistance
 import numpy
 import regex
 from deap import algorithms, base, creator, gp, tools
-
 
 # Handle command line arguments
 parser = argparse.ArgumentParser(
@@ -23,6 +22,9 @@ parser.add_argument('--match', type=str, nargs="*", default="amazing",
                     help='the input strings that the regex should match')
 parser.add_argument('--avoid', type=str, nargs="*", default="terrible",
                     help='the input strings that the regex should not match')
+parser.add_argument('--threads', type=int, nargs="?", default="4",
+                    help='the number of threads to use during evolution, set to your number of cores')
+
 
 args = parser.parse_args()
 
@@ -100,6 +102,10 @@ toolbox.decorate("mutate", gp.staticLimit(key=operator.attrgetter("height"), max
 
 
 def main():
+    # Get some multi-threading for performance
+    pool = multiprocessing.Pool(args.threads)
+    toolbox.register("map", pool.map)
+
     random.seed(318)
 
     N = args.N
@@ -125,6 +131,7 @@ def main():
     print(hof[0])
     print(toolbox.compile(hof[0]))
     print(f"Completed the evolution run with population N={N} and generations G={G}")
+    pool.close()
     return pop, log, hof
 
 
