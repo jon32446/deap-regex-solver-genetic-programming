@@ -129,9 +129,28 @@ def main():
                                    halloffame=hof, verbose=True)
     # print log
     print(hof[0])
-    print(toolbox.compile(hof[0]))
-    print(f"Completed the evolution run with population N={N} and generations G={G}")
+    final_regex = toolbox.compile(hof[0])
+    print(final_regex)
     pool.close()
+
+    # Print out final summary and the lists in a table
+    print(f"Completed the evolution run with population N={N} and generations G={G}")
+    padding = max(len(i) for i in args.match) + 4
+    fmt = f"{{:>{padding}}}  | {{}}"
+    print(fmt.format("match", "avoid"))
+    print(fmt.format("-----", "-----"))
+    final_regex = f"^({final_regex})$"  # for final evaluation, match all-or-nothing
+    for i in range(max(len(args.match), len(args.avoid))):
+        m = ""
+        if i < len(args.match):
+            in_match = args.match[i]
+            m = in_match + " " + ("✅" if in_match == get_match(final_regex, in_match) else "❌")
+        a = ""
+        if i < len(args.avoid):
+            in_avoid = args.avoid[i]
+            a = in_avoid + " " + ("✅" if "" == get_match(final_regex, in_avoid) else "❌")
+        print(fmt.format(m, a))
+
     return pop, log, hof
 
 
