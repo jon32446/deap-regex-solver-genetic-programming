@@ -1,4 +1,4 @@
-# deap-tutorial-genetic-programming
+# Generate regex to match lists using DEAP genetic programming library
 Playing around with DEAP's genetic programming library.
 
 ## evolve-a-string
